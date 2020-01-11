@@ -1,5 +1,3 @@
-// Created by http://oleddisplay.squix.ch/ Consider a donation
-// In case of problems make sure that you are using the font file with the correct version!
 const uint8_t Roboto_Mono_Light_48[] PROGMEM = {
   0x20, // Width: 32
   0x39, // Height: 57

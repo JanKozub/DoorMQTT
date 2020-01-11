@@ -84,3 +84,8 @@ void displayUnlock() {
   oled.drawXbm(24, 8, unlock_width, unlock_height, unlockBitMap);
   oled.display();
 }
+
+void displayClear() {
+  oled.clear();
+  oled.display();
+}

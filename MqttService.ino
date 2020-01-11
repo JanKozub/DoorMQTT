@@ -23,7 +23,7 @@ void reconnect() {
     if (client.connect(clientId.c_str())) {
       Serial.println("connected");
 
-      client.publish("door", "door");
+      client.publish("door", "door-00");
 
       client.subscribe("doorSub");
     } else {
@@ -41,11 +41,17 @@ void callback(char* topic, byte* payload, unsigned int length) {
   for (int i = 0; i < length; i++) {
     output = output + (char)payload[i];
   }
+  String msg = "door-" + String(lock) + String(displayState);
   if (output.equals("TOGGLE")) {
     lock = !lock;
     changeLockStatus(lock);
-    String msg = "door" + String(lock);
-    client.publish("door", msg.c_str());
-    ESP.wdtFeed();
+  } else {
+    if (output.equals("DISPLAY")) {
+      displayState = !displayState;
+      changeDisplayStatus();
+    }
   }
+
+  client.publish("door", msg.c_str());
+  ESP.wdtFeed();
 }

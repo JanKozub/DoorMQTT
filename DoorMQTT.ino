@@ -2,11 +2,12 @@
 #include <SH1106Wire.h>
 #include <PubSubClient.h>
 #include <Wire.h>
+#include <Servo.h>
 #include "font.h"
 
 #define EEPROM_I2C_ADDRESS 0x50
-#define btnOut 12
-#define btnIn 14
+#define btnOut 14
+#define btnIn 12
 
 SH1106Wire oled(0x3c, 4, 5);
 
@@ -17,8 +18,11 @@ const char* mqtt_server;
 WiFiClient espClient;
 PubSubClient client(espClient);
 
+Servo servo;
+
 boolean lock = false;
-char lockPin[] = {'5', '4', '5', '6'};
+boolean displayState = false;
+char lockPin[] = {'1', '2', '3', '4'};
 int lastMsg = 0;
 
 void setup() {
@@ -36,12 +40,15 @@ void setup() {
   oled.setFont(Roboto_Mono_Light_48);
   oled.init();
   oled.flipScreenVertically();
+  displayState = lock;
 
   changeLockStatus(lock);
 
   setup_wifi();
   client.setServer(mqtt_server, 1883);
   client.setCallback(callback);
+
+  servo.attach(16);
 }
 
 void loop() {
@@ -53,7 +60,7 @@ void loop() {
     long now = millis();
     if (now - lastMsg > 2000) {
       lastMsg = now;
-      String msg = "door" + String(lock);
+      String msg = "door-" + String(lock) + String(displayState);
       Serial.print("Publish message: ");
       Serial.println(msg);
       client.publish("door", msg.c_str());
@@ -62,8 +69,9 @@ void loop() {
   }
   if (digitalRead(btnIn) == 0) {
     lock = !lock;
-    changeLockStatus(lock);
     while (digitalRead(btnIn) == 0) {}
+    changeLockStatus(lock);
+    delay(300);
   }
   if (digitalRead(btnOut) == 0) {
     if (lock) {
@@ -75,14 +83,48 @@ void loop() {
     }
     while (digitalRead(btnOut) == 0) {}
     changeLockStatus(lock);
+    delay(300);
+  }
+  if (readButtons() == 11) {
+    changeDisplayStatus();
+    delay(300);
   }
 }
+
 void changeLockStatus(boolean locked) {
   if (locked) {
     displayLock();
-    //servoLock
+    servo.write(180);
   } else {
     displayUnlock();
-    //servoUnlock
+    servo.write(110);
   }
+}
+
+void changeDisplayStatus() {
+  displayState = !displayState;
+  if (displayState) {
+    if (lock) {
+      displayLock();
+    } else {
+      displayUnlock();
+    }
+  } else {
+    displayClear();
+  }
+}
+
+void selftest() {
+  displayLock();
+  delay(1000);
+  displayUnlock();
+  delay(1000);
+  displayClear();
+  delay(1000);
+  Serial.print("keyboard: ");
+  Serial.print(readButtons());
+  Serial.print(" btIn: ");
+  Serial.print(digitalRead(btnIn));
+  Serial.print(" btOut: ");
+  Serial.println(digitalRead(btnOut));
 }

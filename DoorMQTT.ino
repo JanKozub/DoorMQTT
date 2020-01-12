@@ -21,14 +21,15 @@ PubSubClient client(espClient);
 Servo servo;
 
 boolean lock = false;
-boolean displayState = false;
+boolean displayState = true;
 char lockPin[] = {'1', '2', '3', '4'};
 int lastMsg = 0;
 
 void setup() {
   importPrivateData();
-  lock = readData();
-
+//  lock = readData();
+  lock = false;
+  
   Serial.begin(115200);
   Wire.begin();
 
@@ -40,15 +41,12 @@ void setup() {
   oled.setFont(Roboto_Mono_Light_48);
   oled.init();
   oled.flipScreenVertically();
-  displayState = lock;
 
   changeLockStatus(lock);
 
   setup_wifi();
   client.setServer(mqtt_server, 1883);
   client.setCallback(callback);
-
-  servo.attach(16);
 }
 
 void loop() {
@@ -60,7 +58,7 @@ void loop() {
     long now = millis();
     if (now - lastMsg > 2000) {
       lastMsg = now;
-      String msg = "door-" + String(lock) + String(displayState);
+      String msg = "door," + String(lock) + "," + String(displayState);
       Serial.print("Publish message: ");
       Serial.println(msg);
       client.publish("door", msg.c_str());
@@ -86,6 +84,7 @@ void loop() {
     delay(300);
   }
   if (readButtons() == 11) {
+    displayState = !displayState;
     changeDisplayStatus();
     delay(300);
   }
@@ -94,15 +93,28 @@ void loop() {
 void changeLockStatus(boolean locked) {
   if (locked) {
     displayLock();
-    servo.write(180);
+    servo.attach(16);
+    servo.write(150);
+    ESP.wdtFeed();
+    delay(700);
+    servo.detach();
+    ESP.wdtFeed();
+    writeData(1);
+    ESP.wdtFeed();
   } else {
     displayUnlock();
-    servo.write(110);
+    servo.attach(16);
+    servo.write(80);
+    ESP.wdtFeed();
+    delay(700);
+    servo.detach();
+    ESP.wdtFeed();
+    writeData(0);
+    ESP.wdtFeed();
   }
 }
 
 void changeDisplayStatus() {
-  displayState = !displayState;
   if (displayState) {
     if (lock) {
       displayLock();

@@ -21,14 +21,12 @@ boolean pinUnlock() {
       num = btRead;
       num.toCharArray(buf, 2);
       typedPin[i] = buf[0];
-      Serial.println(typedPin[i]);
     }
 
     displayPin(typedPin);
     delay(200);
   }
   for (int j = 0; j <= 3; j++) {
-    Serial.println(typedPin[j]);
     if (lockPin[j] == typedPin[j])counter++;
   }
 

@@ -27,11 +27,10 @@ int lastMsg = 0;
 
 void setup() {
   importPrivateData();
-//  lock = readData();
-  lock = false;
   
   Serial.begin(115200);
   Wire.begin();
+  lock = readData();
 
   pinMode(btnOut, INPUT_PULLUP);
   pinMode(btnIn, INPUT_PULLUP);
